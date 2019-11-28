@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+# A simple test script to call the HelloWorldServer gRPC method multiple
+# times in a loop. This script produces the following output:
+#
+# Begin 10000 gRPC calls...
+# Done
+# Elapsed time (H:MM:SS:NNN) 0:02:08:289
+#
+# So, about 12.8289 milliseconds per call. The performance seems to fluctuate
+# between 1.5 to 2.2 minutes, which seems odd since it's doing the same thing on
+# every call. Additional profiling would be needed to know how much of that is
+# grpc_cli, and how much is the server.
+
+calls=10000
+printf "Begin $calls gRPC calls"
+start=$(date +%s%N | cut -b1-13)
+for ((i=0;i<calls;i++)); do
+  grpc_cli call localhost:50051 SayHello "name: 'gRPC CLI'" &>/dev/null
+  if [[ $? -ne 0 ]]; then
+    echo "ERROR: the gRPC call failed"
+    exit 1
+  fi
+  if [[ $((i % 100)) -eq 0 ]]; then
+    printf "."
+  fi
+done
+stop=$(date +%s%N | cut -b1-13)
+echo -e "\nDone"
+if [[ $(which elapsed) ]]; then
+  # uses 'elapsed' shell script from my bash repo: https://github.com/aceeric/bash
+  elapsed $start $stop
+fi
+exit 0
