@@ -125,4 +125,4 @@ I wanted to incorporate gRPC into another application I was working on so I need
     Done
     Elapsed time (H:MM:SS:NNN) 0:02:08:289
     ```
-    So, it looks like approximately 12.8 milliseconds per call when using the `grpc_cli` tool.
+    So, it looks like approximately 12.8 milliseconds per call when using the `grpc_cli` tool running on a Ubuntu system with 12 Intel i7-8700 cores running at 3.20GHz. (Though - the number of cores probably doesn't make much of a difference.)
