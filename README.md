@@ -1,6 +1,6 @@
 # gRPC Hello World
 
-I wanted to incorporate gRPC into another application I was working on so I needed to build a "Hello World" project to get familiar with it. There are many tutorials and examples available that provide guidance on implementing gRPC in Java. Rather than git clone a full existing example, I elected to build up my project a little more manually. My environment is IntelliJ Ultimate 2019.2 on Ubuntu 18.04.3 LTS. Here are the steps I followed:
+I wanted to incorporate gRPC into another application I was working on so I needed to build a "Hello World" project to get familiar with it. There are many tutorials and examples available that provide guidance on implementing gRPC in Java. Rather than git clone a full existing example, I elected to build up my project a little more manually. My environment is IntelliJ Ultimate 2019.3 on Ubuntu 18.04.3 LTS. Here are the steps I followed:
 
 1. Read the available gRPC quick starts, guides, etc.
 2. Create an empty project with the Maven 'quickstart' archetype
@@ -118,7 +118,7 @@ I wanted to incorporate gRPC into another application I was working on so I need
       rpc SayHello(helloworld.HelloRequest) returns (helloworld.HelloReply) {}
     }
     ```
-18. Run a simple script to get a sense of the round-trip time to make a gRPC call
+18. Run a simple script to get a sense of the round-trip time to make a gRPC call using the grpc_cli CLI 
     ```shell script
     $ /home/eace/IdeaProjects/grpc-server-learn/scripts/call-hello
     Begin 10000 gRPC calls.......................
@@ -126,3 +126,14 @@ I wanted to incorporate gRPC into another application I was working on so I need
     Elapsed time (H:MM:SS:NNN) 0:02:08:289
     ```
     So, it looks like approximately 12.8 milliseconds per call when using the `grpc_cli` tool running on a Ubuntu system with 12 Intel i7-8700 cores running at 3.20GHz. (Though - the number of cores probably doesn't make much of a difference.)
+19. Add `myservice.proto` and associated server and client classes to learn a little more about implementing gRPC functionality. Add a shell script to compare the performance of calling a gRPC method from within a Java client vs. using the grpc_cli CLI:
+   ```shell script
+   $ /home/eace/IdeaProjects/grpc-server-learn/scripts/compare-call-set-cnt
+   Begin 10000 gRPC calls using the Java client
+   Done
+   Elapsed time (H:MM:SS:NNN) 0:00:02:409
+   Begin 10000 gRPC calls using the grpc_cli client......
+   Done
+   Elapsed time (H:MM:SS:NNN) 0:02:06:643
+   ```
+   So this test shows 0.2409 milliseconds per call when making the gRPC calls within a running Java client, vs. 12.6643 milliseconds per call using the CLI. The difference is the overhead of repeatedly running the CLI for each method invocation as opposed to starting the Java client once, and then calling the server within the running client.

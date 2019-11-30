@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+
+# A test script to compare performance of calling a server method multiple times from a Java client vs.
+# using the grpc_cli client. The test only highlights the overhead of starting and stopping the grpc_cli
+# client. The Java test instantiates a Java client once, and invokes the server method multiple times within
+# that running Java class. The grpc_cli test has to invoke 'grpc_cli' from the command line each time.
+#
+# This script produces the following output (varies slightly on each run):
+#
+# Begin 10000 gRPC calls using the Java client
+# Done
+# Elapsed time (H:MM:SS:NNN) 0:00:02:430
+# Begin 10000 gRPC calls using the grpc_cli client.......
+# Done
+# Elapsed time (H:MM:SS:NNN) 0:01:57:112
+#
+# So: 0.243 milliseconds per method call from within the Java client, and 11.7112 milliseconds per call using
+# the grpc_cli client
+
+# First, build the classpath for the Java client. Out of curiosity, start with the classpath that
+# IntelliJ builds based on Maven, and then remove all the JARs whose absence don't break the Java client
+
+jars=(\
+  #/home/eace/.m2/repository/com/google/android/annotations/4.1.1.4/annotations-4.1.1.4.jar\
+  #/home/eace/.m2/repository/com/google/api/grpc/proto-google-common-protos/1.12.0/proto-google-common-protos-1.12.0.jar\
+  #/home/eace/.m2/repository/com/google/auth/google-auth-library-credentials/0.17.1/google-auth-library-credentials-0.17.1.jar\
+  #/home/eace/.m2/repository/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar\
+  #/home/eace/.m2/repository/com/google/code/gson/gson/2.8.5/gson-2.8.5.jar\
+  #/home/eace/.m2/repository/com/google/errorprone/error_prone_annotations/2.3.3/error_prone_annotations-2.3.3.jar\
+  /home/eace/.m2/repository/com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar\
+  /home/eace/.m2/repository/com/google/guava/guava/28.1-android/guava-28.1-android.jar\
+  #/home/eace/.m2/repository/com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar\
+  #/home/eace/.m2/repository/com/google/j2objc/j2objc-annotations/1.3/j2objc-annotations-1.3.jar\
+  /home/eace/.m2/repository/com/google/protobuf/protobuf-java/3.10.0/protobuf-java-3.10.0.jar\
+  #/home/eace/.m2/repository/com/google/protobuf/protobuf-java-util/3.10.0/protobuf-java-util-3.10.0.jar\
+  #/home/eace/.m2/repository/com/squareup/okhttp/okhttp/2.5.0/okhttp-2.5.0.jar\
+  #/home/eace/.m2/repository/com/squareup/okio/okio/1.13.0/okio-1.13.0.jar\
+  #/home/eace/.m2/repository/io/grpc/grpc-all/1.25.0/grpc-all-1.25.0.jar\
+  /home/eace/.m2/repository/io/grpc/grpc-api/1.25.0/grpc-api-1.25.0.jar\
+  #/home/eace/.m2/repository/io/grpc/grpc-auth/1.25.0/grpc-auth-1.25.0.jar\
+  /home/eace/.m2/repository/io/grpc/grpc-context/1.25.0/grpc-context-1.25.0.jar\
+  /home/eace/.m2/repository/io/grpc/grpc-core/1.25.0/grpc-core-1.25.0.jar\
+  /home/eace/.m2/repository/io/grpc/grpc-netty/1.25.0/grpc-netty-1.25.0.jar\
+  #/home/eace/.m2/repository/io/grpc/grpc-okhttp/1.25.0/grpc-okhttp-1.25.0.jar\
+  /home/eace/.m2/repository/io/grpc/grpc-protobuf/1.25.0/grpc-protobuf-1.25.0.jar\
+  /home/eace/.m2/repository/io/grpc/grpc-protobuf-lite/1.25.0/grpc-protobuf-lite-1.25.0.jar\
+  #/home/eace/.m2/repository/io/grpc/grpc-services/1.25.0/grpc-services-1.25.0.jar\
+  /home/eace/.m2/repository/io/grpc/grpc-stub/1.25.0/grpc-stub-1.25.0.jar\
+  #/home/eace/.m2/repository/io/grpc/grpc-testing/1.25.0/grpc-testing-1.25.0.jar\
+  /home/eace/.m2/repository/io/netty/netty-buffer/4.1.42.Final/netty-buffer-4.1.42.Final.jar\
+  /home/eace/.m2/repository/io/netty/netty-codec/4.1.42.Final/netty-codec-4.1.42.Final.jar\
+  /home/eace/.m2/repository/io/netty/netty-codec-http2/4.1.42.Final/netty-codec-http2-4.1.42.Final.jar\
+  /home/eace/.m2/repository/io/netty/netty-codec-http/4.1.42.Final/netty-codec-http-4.1.42.Final.jar\
+  #/home/eace/.m2/repository/io/netty/netty-codec-socks/4.1.42.Final/netty-codec-socks-4.1.42.Final.jar\
+  /home/eace/.m2/repository/io/netty/netty-common/4.1.42.Final/netty-common-4.1.42.Final.jar\
+  /home/eace/.m2/repository/io/netty/netty-handler/4.1.42.Final/netty-handler-4.1.42.Final.jar\
+  #/home/eace/.m2/repository/io/netty/netty-handler-proxy/4.1.42.Final/netty-handler-proxy-4.1.42.Final.jar\
+  /home/eace/.m2/repository/io/netty/netty-resolver/4.1.42.Final/netty-resolver-4.1.42.Final.jar\
+  /home/eace/.m2/repository/io/netty/netty-transport/4.1.42.Final/netty-transport-4.1.42.Final.jar\
+  /home/eace/.m2/repository/io/opencensus/opencensus-api/0.21.0/opencensus-api-0.21.0.jar\
+  /home/eace/.m2/repository/io/opencensus/opencensus-contrib-grpc-metrics/0.21.0/opencensus-contrib-grpc-metrics-0.21.0.jar\
+  /home/eace/.m2/repository/io/perfmark/perfmark-api/0.19.0/perfmark-api-0.19.0.jar\
+  #/home/eace/.m2/repository/javax/annotation/javax.annotation-api/1.3.2/javax.annotation-api-1.3.2.jar\
+  #/home/eace/.m2/repository/junit/junit/4.12/junit-4.12.jar\
+  #/home/eace/.m2/repository/org/checkerframework/checker-compat-qual/2.5.5/checker-compat-qual-2.5.5.jar\
+  #/home/eace/.m2/repository/org/codehaus/mojo/animal-sniffer-annotations/1.17/animal-sniffer-annotations-1.17.jar\
+  #/home/eace/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar\
+)
+classpath="/home/eace/IdeaProjects/grpc-server-learn/target/classes"
+for jar in "${jars[@]}"; do
+  classpath="$classpath:$jar"
+done
+
+calls=10000
+
+printf "Begin %d gRPC calls using the Java client\n" $calls
+start=$(date +%s%N | cut -b1-13)
+/opt/java-jdk/jdk-10.0.2/bin/java -classpath $classpath org.ericace.grpc.server.MyServiceClient 123456789 $calls &>/dev/null
+if [[ $? -ne 0 ]]; then
+  echo "ERROR: the Java gRPC call failed"
+  exit 1
+fi
+stop=$(date +%s%N | cut -b1-13)
+echo "Done"
+if [[ $(which elapsed) ]]; then
+  # uses 'elapsed' shell script from my bash repo: https://github.com/aceeric/bash
+  elapsed $start $stop
+fi
+
+printf "Begin %d gRPC calls using the grpc_cli client" $calls
+start=$(date +%s%N | cut -b1-13)
+for ((i=0;i<calls;i++)); do
+  grpc_cli call localhost:50051 SetNumberOfItems "item_count: 987654321" &>/dev/null
+  if [[ $? -ne 0 ]]; then
+    echo "ERROR: the grpc_cli gRPC call failed"
+    exit 1
+  fi
+  if [[ $((i % 100)) -eq 0 ]]; then
+    printf "."
+  fi
+done
+stop=$(date +%s%N | cut -b1-13)
+echo -e "\nDone"
+if [[ $(which elapsed) ]]; then
+  elapsed $start $stop
+fi
+exit 0

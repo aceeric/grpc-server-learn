@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# A test script to call MyServiceServer GetThreadName method
+# in a loop to see how the Java client code allocates method calls
+# to threads. Run concurrently from multiple terminal windows.
+
+calls=10000
+for ((i=0;i<calls;i++)); do
+  printf "$i: "
+  grpc_cli call localhost:50051 GetThreadName "" 2>/dev/null | grep 'thread_name:'
+done

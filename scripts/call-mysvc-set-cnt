@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+# A test script to call MyServiceServer SetNumberOfItems method
+# in a loop. Pass the value to set in arg 1 of the script. E.g.:
+#
+# $ call-mysvc-set-cnt 42
+#
+# The method sets the count value for the service and then returns the current value that was
+# set, by calling the  'SetNumberOfItems' method. If the script is run concurrently in multiple
+# terminal windows, the concurrency behavior can be observed. In a small number of cases, the
+# set method returns a value from another instance of the running script because there is no
+# synchronization within the method itself.
+
+calls=10000
+for ((i=0;i<calls;i++)); do
+  grpc_cli call localhost:50051 SetNumberOfItems "item_count: $1" 2>/dev/null | grep 'item_count:'
+done

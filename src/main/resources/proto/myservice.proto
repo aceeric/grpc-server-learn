@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "org.ericace.grpc.server";
+option java_outer_classname = "MyService";
+option objc_class_prefix = "MYSVC";
+
+import "google/protobuf/empty.proto";
+
+package myservice;
+
+service TheService {
+  rpc GetNumberOfItems (google.protobuf.Empty) returns (ItemCount) {}
+  rpc SetNumberOfItems (ItemCount) returns (ItemCount) {}
+  rpc GetThreadName (google.protobuf.Empty) returns (ThreadName) {}
+}
+
+message ItemCount {
+  int64 item_count = 1;
+}
+
+message ThreadName {
+  string thread_name = 1;
+}
+
