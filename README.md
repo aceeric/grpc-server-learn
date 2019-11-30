@@ -127,13 +127,13 @@ I wanted to incorporate gRPC into another application I was working on so I need
     ```
     So, it looks like approximately 12.8 milliseconds per call when using the `grpc_cli` tool running on a Ubuntu system with 12 Intel i7-8700 cores running at 3.20GHz. (Though - the number of cores probably doesn't make much of a difference.)
 19. Add `myservice.proto` and associated server and client classes to learn a little more about implementing gRPC functionality. Add a shell script to compare the performance of calling a gRPC method from within a Java client vs. using the grpc_cli CLI:
-   ```shell script
-   $ /home/eace/IdeaProjects/grpc-server-learn/scripts/compare-call-set-cnt
-   Begin 10000 gRPC calls using the Java client
-   Done
-   Elapsed time (H:MM:SS:NNN) 0:00:02:409
-   Begin 10000 gRPC calls using the grpc_cli client......
-   Done
-   Elapsed time (H:MM:SS:NNN) 0:02:06:643
-   ```
-   So this test shows 0.2409 milliseconds per call when making the gRPC calls within a running Java client, vs. 12.6643 milliseconds per call using the CLI. The difference is the overhead of repeatedly running the CLI for each method invocation as opposed to starting the Java client once, and then calling the server within the running client.
+    ```shell script
+    $ /home/eace/IdeaProjects/grpc-server-learn/scripts/compare-call-set-cnt
+    Begin 10000 gRPC calls using the Java client
+    Done
+    Elapsed time (H:MM:SS:NNN) 0:00:02:409
+    Begin 10000 gRPC calls using the grpc_cli client......
+    Done
+    Elapsed time (H:MM:SS:NNN) 0:02:06:643
+    ```
+    So this test shows 0.2409 milliseconds per call when making the gRPC calls within a running Java client, vs. 12.6643 milliseconds per call using the CLI. The difference is the overhead of repeatedly running the CLI for each method invocation as opposed to starting the Java client once, and then calling the server within the running client.
